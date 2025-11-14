@@ -778,7 +778,6 @@ def delete_managed_identity_from_cache(managed_identity: VirtualItem) -> None:
 
 # Managed Private Endpoints
 
-
 def _get_managed_private_endpoints_from_api(
     container: VirtualItemContainer,
 ) -> list[VirtualItem]:
@@ -812,6 +811,10 @@ def get_managed_private_endpoints(container: VirtualItemContainer) -> list[Virtu
         return _get_managed_private_endpoints_from_cache(container)
     return _get_managed_private_endpoints_from_api(container)
 
+def get_managed_private_endpoints_for_workspace(workspace: Workspace) -> list[VirtualItem]:
+    """Helper to get managed private endpoints without manually creating container."""
+    container = VirtualItemContainer(".managedprivateendpoints", None, workspace)
+    return get_managed_private_endpoints(container)
 
 def _get_managed_private_endpoint_id(
     container: VirtualItemContainer, managed_private_endpoint_name: str

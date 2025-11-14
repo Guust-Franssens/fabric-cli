@@ -2,19 +2,23 @@
 # Licensed under the MIT License.
 
 from argparse import Namespace
+from copy import deepcopy
 from typing import Union
 
 from fabric_cli.client import fab_api_item as item_api
+from fabric_cli.client import (
+    fab_api_managedprivateendpoint as managedprivateendpoint_api,
+)
 from fabric_cli.client import fab_api_workspace as workspace_api
 from fabric_cli.core import fab_constant
 from fabric_cli.core.fab_commands import Command
 from fabric_cli.core.fab_exceptions import FabricCLIError
 from fabric_cli.core.hiearchy.fab_folder import Folder
 from fabric_cli.core.hiearchy.fab_hiearchy import Item, Tenant, Workspace
+from fabric_cli.utils import fab_item_util as item_utils
 from fabric_cli.utils import fab_mem_store as utils_mem_store
 from fabric_cli.utils import fab_ui as utils_ui
 from fabric_cli.utils import fab_util as utils
-from fabric_cli.utils import fab_item_util as item_utils
 
 
 def bulk(tenant: Tenant, args: Namespace, force_delete: bool) -> None:
@@ -78,6 +82,15 @@ def single(workspace: Workspace, args: Namespace, force_delete: bool) -> None:
 
     if force_delete:
         utils_ui.print_grey(f"This will delete {len(ws_items)} underlying items")
+
+        managed_private_endpoints = utils_mem_store.get_managed_private_endpoints_for_workspace(workspace)
+        for managed_private_endpoint in managed_private_endpoints:
+            args_ = deepcopy(args)
+            args_.ws_id = managed_private_endpoint.workspace.id
+            args_.id = managed_private_endpoint.id
+            args_.name = managed_private_endpoint.name
+            if managedprivateendpoint_api.delete_managed_private_endpoint(args_, force_delete):
+                utils_mem_store.delete_managed_identity_from_cache(managed_private_endpoint)
 
         if workspace_api.delete_workspace(args, force_delete):
             # Remove from mem_store
